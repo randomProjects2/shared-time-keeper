@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Google } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -57,7 +57,7 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
 
         <div className="flex flex-col items-center justify-center py-6">
           <div className="mb-6 rounded-full bg-primary/10 p-4">
-            <Google className="h-8 w-8 text-primary" />
+            <Calendar className="h-8 w-8 text-primary" />
           </div>
           <p className="text-center text-sm text-muted-foreground mb-4">
             We'll only access your calendar events and will never modify them without your permission.
