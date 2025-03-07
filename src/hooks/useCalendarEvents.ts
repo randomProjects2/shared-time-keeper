@@ -34,6 +34,7 @@ interface UseCalendarEventsReturn {
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
+  addEvent: (event: Omit<CalendarEvent, 'id'>) => Promise<CalendarEvent>;
 }
 
 // Mock data generator function
@@ -125,6 +126,29 @@ export const useCalendarEvents = ({ users }: UseCalendarEventsProps): UseCalenda
     }
   };
   
+  // Add new event function
+  const addEvent = async (eventData: Omit<CalendarEvent, 'id'>): Promise<CalendarEvent> => {
+    try {
+      // Create a new event with a unique ID
+      const newEvent: CalendarEvent = {
+        ...eventData,
+        id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      };
+      
+      // In a real app, this would be an API call to the calendar service
+      // For now, we'll just update our local state
+      setEvents(prevEvents => [...prevEvents, newEvent]);
+      
+      toast.success('Appointment added successfully');
+      return newEvent;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to add event');
+      toast.error('Failed to add appointment');
+      console.error('Error adding event:', error);
+      throw error;
+    }
+  };
+  
   // Fetch events when users change
   useEffect(() => {
     if (users.length > 0) {
@@ -139,6 +163,7 @@ export const useCalendarEvents = ({ users }: UseCalendarEventsProps): UseCalenda
     events,
     isLoading,
     error,
-    refetch: fetchEvents
+    refetch: fetchEvents,
+    addEvent
   };
 };

@@ -2,17 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import MonthView from '@/components/Calendar/MonthView';
 import EventList from '@/components/Calendar/EventList';
+import AppointmentForm from '@/components/Calendar/AppointmentForm';
 import GoogleAuth from '@/components/UserManagement/GoogleAuth';
 import { Button } from '@/components/ui/button';
 import { useCalendarEvents, CalendarUser } from '@/hooks/useCalendarEvents';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, CalendarPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [users, setUsers] = useState<CalendarUser[]>([]);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
-  const { events, isLoading } = useCalendarEvents({ users });
+  const [isAppointmentFormOpen, setIsAppointmentFormOpen] = useState(false);
+  const { events, isLoading, addEvent } = useCalendarEvents({ users });
 
   // Check for stored users on initial load
   useEffect(() => {
@@ -41,6 +43,23 @@ const Index = () => {
 
   const handleConnect = () => {
     setIsAuthDialogOpen(true);
+  };
+
+  const handleAddAppointment = () => {
+    if (users.length === 0) {
+      toast.error('Please connect a calendar first');
+      setIsAuthDialogOpen(true);
+      return;
+    }
+    setIsAppointmentFormOpen(true);
+  };
+
+  const handleSaveAppointment = async (eventData: Omit<CalendarEvent, 'id'>) => {
+    try {
+      await addEvent(eventData);
+    } catch (error) {
+      console.error('Error saving appointment:', error);
+    }
   };
 
   return (
@@ -72,6 +91,13 @@ const Index = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             <div className="md:col-span-12">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-semibold">Calendar</h2>
+                <Button onClick={handleAddAppointment} className="gap-2">
+                  <CalendarPlus className="h-4 w-4" />
+                  Add Appointment
+                </Button>
+              </div>
               <MonthView
                 selectedDate={selectedDate}
                 onSelectDate={setSelectedDate}
@@ -93,6 +119,14 @@ const Index = () => {
         isOpen={isAuthDialogOpen} 
         onClose={() => setIsAuthDialogOpen(false)} 
         onSuccess={handleAddUser} 
+      />
+
+      <AppointmentForm
+        isOpen={isAppointmentFormOpen}
+        onClose={() => setIsAppointmentFormOpen(false)}
+        selectedDate={selectedDate}
+        onSave={handleSaveAppointment}
+        currentUser={users.length > 0 ? users[0] : null}
       />
     </div>
   );
