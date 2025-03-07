@@ -1,3 +1,4 @@
+
 // Global type definitions
 
 interface CalendarEvent {
@@ -18,5 +19,5 @@ interface CalendarUser {
   email: string;
   calendarId: string;
   accessToken: string;
-  colorClass: string;
+  colorClass?: string;
 }

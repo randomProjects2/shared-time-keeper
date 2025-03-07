@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { addMonths, subMonths, format, isSameMonth, isSameDay } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DayCell from './DayCell';
 import { getCalendarDays, getWeekDaysShort } from '@/utils/dateUtils';
@@ -19,6 +19,7 @@ const MonthView: React.FC<MonthViewProps> = ({
   events = [],
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const isMobile = useIsMobile();
   
   const today = new Date();
@@ -40,8 +41,34 @@ const MonthView: React.FC<MonthViewProps> = ({
     );
   };
 
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      const element = document.documentElement;
+      if (element.requestFullscreen) {
+        element.requestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+    setIsFullscreen(!isFullscreen);
+  };
+
+  // Add event listener for fullscreen change
+  React.useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   return (
-    <div className="w-full max-w-3xl mx-auto">
+    <div className={`w-full max-w-3xl mx-auto transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 bg-background p-4 max-w-none' : ''}`}>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold">{format(currentMonth, 'MMMM yyyy')}</h2>
         <div className="flex items-center space-x-2">
@@ -58,10 +85,18 @@ const MonthView: React.FC<MonthViewProps> = ({
           <Button variant="outline" size="icon" onClick={nextMonth} aria-label="Next month">
             <ChevronRight className="h-4 w-4" />
           </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={toggleFullscreen} 
+            aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
 
-      <div className="bg-card rounded-xl overflow-hidden shadow-sm border">
+      <div className={`bg-card rounded-xl overflow-hidden shadow-sm border ${isFullscreen ? 'h-[calc(100%-5rem)]' : ''}`}>
         <div className="grid grid-cols-7 gap-0">
           {weekDays.map((day, index) => (
             <div 
