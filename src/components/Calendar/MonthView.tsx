@@ -116,6 +116,7 @@ const MonthView: React.FC<MonthViewProps> = ({
               isSelected={isSameDay(day, selectedDate)}
               events={getEventsForDay(day)}
               onSelectDate={onSelectDate}
+              isFullscreen={isFullscreen}
             />
           ))}
         </div>
