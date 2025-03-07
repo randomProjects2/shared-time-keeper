@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { Check, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AppointmentFormProps {
@@ -28,6 +29,7 @@ interface AppointmentFormProps {
   selectedDate: Date;
   onSave: (event: Omit<CalendarEvent, 'id'>) => Promise<void>;
   currentUser: CalendarUser | null;
+  connectedUsers: CalendarUser[];
 }
 
 const AppointmentForm: React.FC<AppointmentFormProps> = ({
@@ -35,7 +37,8 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   onClose,
   selectedDate,
   onSave,
-  currentUser
+  currentUser,
+  connectedUsers
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -43,6 +46,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [type, setType] = useState<'personal' | 'work' | string>('personal');
+  const [selectedAttendees, setSelectedAttendees] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,6 +88,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
         end: endDate.toISOString(),
         type,
         userId: currentUser.id,
+        attendees: selectedAttendees.length > 0 ? selectedAttendees : undefined
       };
       
       await onSave(newEvent);
@@ -95,6 +100,7 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
       setStartTime('09:00');
       setEndTime('10:00');
       setType('personal');
+      setSelectedAttendees([]);
       
       onClose();
     } catch (error) {
@@ -102,6 +108,14 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const toggleAttendee = (email: string) => {
+    setSelectedAttendees(prev => 
+      prev.includes(email)
+        ? prev.filter(e => e !== email)
+        : [...prev, email]
+    );
   };
 
   return (
@@ -185,6 +199,32 @@ const AppointmentForm: React.FC<AppointmentFormProps> = ({
               rows={3}
             />
           </div>
+
+          {connectedUsers.length > 0 && (
+            <div className="space-y-2">
+              <label className="flex items-center gap-1.5 text-sm font-medium">
+                <Users className="h-4 w-4" />
+                Attendees
+              </label>
+              <div className="border rounded-md p-2 space-y-1">
+                {connectedUsers.map(user => (
+                  <div 
+                    key={user.id}
+                    className="flex items-center justify-between p-2 rounded hover:bg-muted cursor-pointer"
+                    onClick={() => toggleAttendee(user.email)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${user.colorClass || 'bg-primary'}`} />
+                      <span>{user.name}</span>
+                    </div>
+                    {selectedAttendees.includes(user.email) && (
+                      <Check className="h-4 w-4 text-green-500" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           <DialogFooter>
             <DialogClose asChild>

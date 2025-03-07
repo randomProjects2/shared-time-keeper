@@ -127,6 +127,7 @@ const Index = () => {
         selectedDate={selectedDate}
         onSave={handleSaveAppointment}
         currentUser={users.length > 0 ? users[0] : null}
+        connectedUsers={users}
       />
     </div>
   );
