@@ -28,7 +28,7 @@ const DayCell: React.FC<DayCellProps> = ({
   // Generate class names based on day status
   const dayClasses = cn(
     'relative border border-border/30 p-1 transition-all',
-    isFullscreen ? 'h-auto min-h-24' : 'h-14',
+    isFullscreen ? 'h-full min-h-[100px]' : 'h-14',
     !isCurrentMonth && 'text-muted-foreground bg-background/50',
     isCurrentMonth && 'bg-card'
   );
@@ -73,8 +73,8 @@ const DayCell: React.FC<DayCellProps> = ({
 
       {/* Event details for fullscreen mode */}
       {isFullscreen && hasEvents && (
-        <div className="mt-2 space-y-1 text-xs overflow-hidden">
-          {events.slice(0, 3).map((event, index) => (
+        <div className="mt-2 space-y-1 text-xs overflow-y-auto max-h-[calc(100%-2rem)]">
+          {events.slice(0, isFullscreen ? 5 : 3).map((event, index) => (
             <div 
               key={index}
               className={cn(
@@ -91,9 +91,9 @@ const DayCell: React.FC<DayCellProps> = ({
               </div>
             </div>
           ))}
-          {events.length > 3 && (
+          {events.length > (isFullscreen ? 5 : 3) && (
             <div className="text-[10px] text-muted-foreground text-center">
-              +{events.length - 3} more
+              +{events.length - (isFullscreen ? 5 : 3)} more
             </div>
           )}
         </div>

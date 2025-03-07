@@ -96,8 +96,8 @@ const MonthView: React.FC<MonthViewProps> = ({
         </div>
       </div>
 
-      <div className={`bg-card rounded-xl overflow-hidden shadow-sm border ${isFullscreen ? 'h-[calc(100%-5rem)]' : ''}`}>
-        <div className="grid grid-cols-7 gap-0">
+      <div className={`bg-card rounded-xl overflow-hidden shadow-sm border ${isFullscreen ? 'h-[calc(100vh-8rem)]' : ''}`}>
+        <div className="grid grid-cols-7 gap-0 h-full">
           {weekDays.map((day, index) => (
             <div 
               key={index} 
