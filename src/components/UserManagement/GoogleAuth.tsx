@@ -11,6 +11,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { requestGoogleCalendarAccess } from '@/utils/googleApiUtils';
+import { CalendarUser } from '@/hooks/useCalendarEvents';
 
 interface GoogleAuthProps {
   isOpen: boolean;
@@ -20,11 +22,36 @@ interface GoogleAuthProps {
 
 const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAuthClick = () => {
+  const handleAuthClick = async () => {
     setIsLoading(true);
+    setError(null);
     
-    // Mock Google Auth flow - in a real app, this would connect to Google's OAuth
+    try {
+      // Check if Google API client is available
+      if (!import.meta.env.VITE_GOOGLE_CLIENT_ID) {
+        // If no client ID, fall back to demo mode
+        handleDemoAuth();
+        return;
+      }
+      
+      const user = await requestGoogleCalendarAccess();
+      toast.success('Calendar connected successfully!');
+      onSuccess(user);
+      onClose();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to connect to Google Calendar';
+      setError(errorMessage);
+      toast.error('Failed to connect calendar');
+      console.error('Error connecting to Google Calendar:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Fallback to demo mode if Google auth isn't configured
+  const handleDemoAuth = () => {
     setTimeout(() => {
       setIsLoading(false);
       
@@ -38,7 +65,7 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
         colorClass: 'bg-blue-500'
       };
       
-      toast.success('Calendar connected successfully!');
+      toast.success('Demo calendar connected successfully!');
       onSuccess(mockUser);
       onClose();
     }, 1500);
@@ -62,6 +89,12 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
           <p className="text-center text-sm text-muted-foreground mb-4">
             We'll only access your calendar events and will never modify them without your permission.
           </p>
+          
+          {error && (
+            <div className="w-full p-3 mb-4 bg-red-50 text-red-600 rounded-md text-sm">
+              {error}
+            </div>
+          )}
         </div>
 
         <DialogFooter>
