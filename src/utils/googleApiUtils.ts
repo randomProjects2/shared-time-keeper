@@ -7,14 +7,17 @@ const SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
 ].join(' ');
 
-// The client ID you would get from the Google Cloud Console
+// The client ID from the Google Cloud Console
+// You can either:
+// 1. Set it as a VITE_GOOGLE_CLIENT_ID environment variable
+// 2. Replace this empty string with your actual client ID
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 // Handle Google Auth initialization
 export const initGoogleAuth = (): Promise<google.accounts.oauth2.TokenClient> => {
   return new Promise((resolve, reject) => {
     if (!CLIENT_ID) {
-      reject(new Error('Google Client ID is not configured'));
+      reject(new Error('Google Client ID is not configured. Please add your Google Client ID to the app.'));
       return;
     }
 
@@ -43,6 +46,11 @@ export const initGoogleAuth = (): Promise<google.accounts.oauth2.TokenClient> =>
 // Request access token and fetch user info
 export const requestGoogleCalendarAccess = async (): Promise<CalendarUser> => {
   try {
+    // Check if CLIENT_ID is set
+    if (!CLIENT_ID) {
+      throw new Error('Google Client ID is not configured. Using demo mode instead.');
+    }
+    
     // Initialize the token client
     const tokenClient = await initGoogleAuth();
     
