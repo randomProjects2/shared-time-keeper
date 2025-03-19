@@ -7,12 +7,32 @@ const SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
 ].join(' ');
 
-// The client ID from the Google Cloud Console
-// Priority: 1. Environment variable 2. Hardcoded value
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+// Get Client ID from various sources with priority
+// 1. Runtime window.ENV (for Docker)
+// 2. Vite environment variable
+// 3. Hardcoded value (if any)
+const getClientId = (): string => {
+  // Check for runtime environment variable (from Docker)
+  if (typeof window !== 'undefined' && window.ENV && window.ENV.VITE_GOOGLE_CLIENT_ID) {
+    console.log('Using Client ID from runtime environment variable');
+    return window.ENV.VITE_GOOGLE_CLIENT_ID;
+  }
+  
+  // Check for Vite environment variable
+  if (import.meta.env.VITE_GOOGLE_CLIENT_ID) {
+    console.log('Using Client ID from Vite environment variable');
+    return import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  }
+  
+  console.log('No Client ID found in any environment source');
+  return '';
+};
+
+const CLIENT_ID = getClientId();
 
 // Add debugging to help troubleshoot
 console.log('Google Client ID available:', CLIENT_ID ? 'Yes' : 'No');
+console.log('Client ID value (masked):', CLIENT_ID ? `${CLIENT_ID.substring(0, 3)}...${CLIENT_ID.substring(CLIENT_ID.length - 3)}` : 'none');
 
 // Handle Google Auth initialization
 export const initGoogleAuth = (): Promise<google.accounts.oauth2.TokenClient> => {

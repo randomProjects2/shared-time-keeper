@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,21 +23,35 @@ interface GoogleAuthProps {
 const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clientIdAvailable, setClientIdAvailable] = useState<boolean>(false);
+
+  // Check if client ID is available on component mount
+  useEffect(() => {
+    const checkClientId = () => {
+      // Check various sources for client ID
+      const hasViteEnvClientId = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      const hasRuntimeEnvClientId = !!(typeof window !== 'undefined' && window.ENV && window.ENV.VITE_GOOGLE_CLIENT_ID);
+      
+      const clientIdExists = hasViteEnvClientId || hasRuntimeEnvClientId;
+      setClientIdAvailable(clientIdExists);
+      
+      console.log('Client ID check on component mount:', clientIdExists ? 'Available' : 'Not available');
+      console.log('From Vite env:', hasViteEnvClientId ? 'Yes' : 'No');
+      console.log('From Runtime env:', hasRuntimeEnvClientId ? 'Yes' : 'No');
+    };
+    
+    checkClientId();
+  }, []);
 
   const handleAuthClick = async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      // Check if Google API client is available
-      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      
       console.log('Starting Google auth process');
-      console.log('Client ID available:', clientId ? 'Yes' : 'No');
       
-      if (!clientId) {
+      if (!clientIdAvailable) {
         console.log('No client ID detected, using demo mode');
-        // If no client ID, fall back to demo mode
         handleDemoAuth();
         return;
       }
@@ -105,6 +119,12 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
             We'll only access your calendar events and will never modify them without your permission.
           </p>
           
+          {!clientIdAvailable && (
+            <div className="w-full p-3 mb-4 bg-amber-50 text-amber-600 rounded-md text-sm">
+              Google Calendar API credentials not detected. Demo mode will be used.
+            </div>
+          )}
+          
           {error && (
             <div className="w-full p-3 mb-4 bg-red-50 text-red-600 rounded-md text-sm">
               {error}
@@ -117,7 +137,7 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
             Cancel
           </Button>
           <Button onClick={handleAuthClick} disabled={isLoading}>
-            {isLoading ? 'Connecting...' : 'Connect Calendar'}
+            {isLoading ? 'Connecting...' : clientIdAvailable ? 'Connect Calendar' : 'Use Demo Mode'}
           </Button>
         </DialogFooter>
       </DialogContent>

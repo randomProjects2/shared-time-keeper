@@ -28,3 +28,11 @@ declare namespace google {
     }
   }
 }
+
+// Add custom window ENV property for runtime environment variables
+interface Window {
+  ENV?: {
+    VITE_GOOGLE_CLIENT_ID?: string;
+    [key: string]: string | undefined;
+  };
+}
