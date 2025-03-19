@@ -8,19 +8,23 @@ const SCOPES = [
 ].join(' ');
 
 // The client ID from the Google Cloud Console
-// You can either:
-// 1. Set it as a VITE_GOOGLE_CLIENT_ID environment variable
-// 2. Replace this empty string with your actual client ID
+// Priority: 1. Environment variable 2. Hardcoded value
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
+// Add debugging to help troubleshoot
+console.log('Google Client ID available:', CLIENT_ID ? 'Yes' : 'No');
 
 // Handle Google Auth initialization
 export const initGoogleAuth = (): Promise<google.accounts.oauth2.TokenClient> => {
   return new Promise((resolve, reject) => {
     if (!CLIENT_ID) {
+      console.error('Google Client ID is not configured. Using demo mode.');
       reject(new Error('Google Client ID is not configured. Please add your Google Client ID to the app.'));
       return;
     }
 
+    console.log('Initializing Google Auth with Client ID');
+    
     // Load the Google API client library
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
@@ -28,6 +32,7 @@ export const initGoogleAuth = (): Promise<google.accounts.oauth2.TokenClient> =>
     script.defer = true;
     script.onload = () => {
       try {
+        console.log('Google API script loaded successfully');
         const tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
@@ -35,10 +40,14 @@ export const initGoogleAuth = (): Promise<google.accounts.oauth2.TokenClient> =>
         });
         resolve(tokenClient);
       } catch (err) {
+        console.error('Error initializing token client:', err);
         reject(err);
       }
     };
-    script.onerror = (error) => reject(error);
+    script.onerror = (error) => {
+      console.error('Failed to load Google API script:', error);
+      reject(error);
+    };
     document.body.appendChild(script);
   });
 };
@@ -48,8 +57,11 @@ export const requestGoogleCalendarAccess = async (): Promise<CalendarUser> => {
   try {
     // Check if CLIENT_ID is set
     if (!CLIENT_ID) {
+      console.log('No Google Client ID found, falling back to demo mode');
       throw new Error('Google Client ID is not configured. Using demo mode instead.');
     }
+    
+    console.log('Requesting Google Calendar access');
     
     // Initialize the token client
     const tokenClient = await initGoogleAuth();
@@ -58,14 +70,17 @@ export const requestGoogleCalendarAccess = async (): Promise<CalendarUser> => {
     return new Promise((resolve, reject) => {
       tokenClient.callback = async (response) => {
         if (response.error) {
+          console.error('Error in token response:', response.error);
           reject(new Error(response.error));
           return;
         }
         
         const accessToken = response.access_token;
+        console.log('Access token obtained successfully');
         
         try {
           // Fetch user info using the token
+          console.log('Fetching user info');
           const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -73,6 +88,7 @@ export const requestGoogleCalendarAccess = async (): Promise<CalendarUser> => {
           });
           
           const userInfo = await userInfoResponse.json();
+          console.log('User info retrieved:', userInfo.email);
           
           // Create CalendarUser object
           const calendarUser: CalendarUser = {
@@ -86,6 +102,7 @@ export const requestGoogleCalendarAccess = async (): Promise<CalendarUser> => {
           
           resolve(calendarUser);
         } catch (error) {
+          console.error('Error fetching user info:', error);
           reject(error);
         }
       };

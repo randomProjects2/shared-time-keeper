@@ -30,7 +30,13 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
     
     try {
       // Check if Google API client is available
-      if (!import.meta.env.VITE_GOOGLE_CLIENT_ID) {
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      
+      console.log('Starting Google auth process');
+      console.log('Client ID available:', clientId ? 'Yes' : 'No');
+      
+      if (!clientId) {
+        console.log('No client ID detected, using demo mode');
         // If no client ID, fall back to demo mode
         handleDemoAuth();
         return;
@@ -42,6 +48,14 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
       onClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to connect to Google Calendar';
+      
+      // If the error indicates missing client ID, use demo mode
+      if (errorMessage.includes('Client ID is not configured')) {
+        console.log('Error indicated missing client ID, switching to demo mode');
+        handleDemoAuth();
+        return;
+      }
+      
       setError(errorMessage);
       toast.error('Failed to connect calendar');
       console.error('Error connecting to Google Calendar:', err);
@@ -52,6 +66,7 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
   
   // Fallback to demo mode if Google auth isn't configured
   const handleDemoAuth = () => {
+    console.log('Using demo mode');
     setTimeout(() => {
       setIsLoading(false);
       
