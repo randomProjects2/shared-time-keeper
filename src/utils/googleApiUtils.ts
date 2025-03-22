@@ -8,10 +8,17 @@ const SCOPES = [
 ].join(' ');
 
 // Get Client ID from various sources with priority
-// 1. Runtime window.ENV (for Docker)
-// 2. Vite environment variable
-// 3. Hardcoded value (if any)
+// 1. localStorage (set via UI)
+// 2. Runtime window.ENV (for Docker)
+// 3. Vite environment variable
 const getClientId = (): string => {
+  // Check for client ID saved in localStorage (highest priority)
+  const localStorageClientId = localStorage.getItem('googleClientId');
+  if (localStorageClientId) {
+    console.log('Using Client ID from localStorage (set via UI)');
+    return localStorageClientId;
+  }
+  
   // Check for runtime environment variable (from Docker)
   if (typeof window !== 'undefined' && window.ENV && window.ENV.VITE_GOOGLE_CLIENT_ID) {
     console.log('Using Client ID from runtime environment variable');
@@ -24,20 +31,22 @@ const getClientId = (): string => {
     return import.meta.env.VITE_GOOGLE_CLIENT_ID;
   }
   
-  console.log('No Client ID found in any environment source');
+  console.log('No Client ID found in any source');
   return '';
 };
 
-const CLIENT_ID = getClientId();
-
 // Add debugging to help troubleshoot
+const CLIENT_ID = getClientId();
 console.log('Google Client ID available:', CLIENT_ID ? 'Yes' : 'No');
 console.log('Client ID value (masked):', CLIENT_ID ? `${CLIENT_ID.substring(0, 3)}...${CLIENT_ID.substring(CLIENT_ID.length - 3)}` : 'none');
 
 // Handle Google Auth initialization
 export const initGoogleAuth = (): Promise<google.accounts.oauth2.TokenClient> => {
   return new Promise((resolve, reject) => {
-    if (!CLIENT_ID) {
+    // Get the latest client ID value when needed
+    const currentClientId = getClientId();
+    
+    if (!currentClientId) {
       console.error('Google Client ID is not configured. Using demo mode.');
       reject(new Error('Google Client ID is not configured. Please add your Google Client ID to the app.'));
       return;
@@ -54,7 +63,7 @@ export const initGoogleAuth = (): Promise<google.accounts.oauth2.TokenClient> =>
       try {
         console.log('Google API script loaded successfully');
         const tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
+          client_id: currentClientId,
           scope: SCOPES,
           callback: () => {}, // We'll set this when we request the token
         });
@@ -75,10 +84,11 @@ export const initGoogleAuth = (): Promise<google.accounts.oauth2.TokenClient> =>
 // Request access token and fetch user info
 export const requestGoogleCalendarAccess = async (): Promise<CalendarUser> => {
   try {
-    // Check if CLIENT_ID is set
-    if (!CLIENT_ID) {
+    // Check if CLIENT_ID is set (get fresh value)
+    const currentClientId = getClientId();
+    if (!currentClientId) {
       console.log('No Google Client ID found, falling back to demo mode');
-      throw new Error('Google Client ID is not configured. Using demo mode instead.');
+      throw new Error('Google Client ID is not configured. Please go to Settings > API Configuration to add your Google API Client ID.');
     }
     
     console.log('Requesting Google Calendar access');

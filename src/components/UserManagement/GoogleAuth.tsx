@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner';
 import { requestGoogleCalendarAccess } from '@/utils/googleApiUtils';
 import { CalendarUser } from '@/hooks/useCalendarEvents';
+import { useNavigate } from 'react-router-dom';
 
 interface GoogleAuthProps {
   isOpen: boolean;
@@ -24,24 +25,29 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clientIdAvailable, setClientIdAvailable] = useState<boolean>(false);
+  const navigate = useNavigate();
 
-  // Check if client ID is available on component mount
+  // Check if client ID is available on component mount and dialog open
   useEffect(() => {
-    const checkClientId = () => {
-      // Check various sources for client ID
-      const hasViteEnvClientId = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      const hasRuntimeEnvClientId = !!(typeof window !== 'undefined' && window.ENV && window.ENV.VITE_GOOGLE_CLIENT_ID);
-      
-      const clientIdExists = hasViteEnvClientId || hasRuntimeEnvClientId;
-      setClientIdAvailable(clientIdExists);
-      
-      console.log('Client ID check on component mount:', clientIdExists ? 'Available' : 'Not available');
-      console.log('From Vite env:', hasViteEnvClientId ? 'Yes' : 'No');
-      console.log('From Runtime env:', hasRuntimeEnvClientId ? 'Yes' : 'No');
-    };
+    if (isOpen) {
+      checkClientId();
+    }
+  }, [isOpen]);
+
+  const checkClientId = () => {
+    // Check various sources for client ID with localStorage having highest priority
+    const hasLocalStorageClientId = !!localStorage.getItem('googleClientId');
+    const hasViteEnvClientId = !!import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const hasRuntimeEnvClientId = !!(typeof window !== 'undefined' && window.ENV && window.ENV.VITE_GOOGLE_CLIENT_ID);
     
-    checkClientId();
-  }, []);
+    const clientIdExists = hasLocalStorageClientId || hasViteEnvClientId || hasRuntimeEnvClientId;
+    setClientIdAvailable(clientIdExists);
+    
+    console.log('Client ID check on dialog open:', clientIdExists ? 'Available' : 'Not available');
+    console.log('From localStorage:', hasLocalStorageClientId ? 'Yes' : 'No');
+    console.log('From Vite env:', hasViteEnvClientId ? 'Yes' : 'No');
+    console.log('From Runtime env:', hasRuntimeEnvClientId ? 'Yes' : 'No');
+  };
 
   const handleAuthClick = async () => {
     setIsLoading(true);
@@ -100,6 +106,11 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
     }, 1500);
   };
 
+  const handleConfigureApiKey = () => {
+    onClose();
+    navigate('/settings?tab=api');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] rounded-xl overflow-hidden backdrop-blur-sm bg-white/80 border border-white/20">
@@ -121,7 +132,7 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
           
           {!clientIdAvailable && (
             <div className="w-full p-3 mb-4 bg-amber-50 text-amber-600 rounded-md text-sm">
-              Google Calendar API credentials not detected. Demo mode will be used.
+              Google Calendar API credentials not detected. You can configure them in settings or use demo mode.
             </div>
           )}
           
@@ -132,10 +143,12 @@ const GoogleAuth: React.FC<GoogleAuthProps> = ({ isOpen, onClose, onSuccess }) =
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          {!clientIdAvailable && (
+            <Button variant="outline" onClick={handleConfigureApiKey}>
+              Configure API Key
+            </Button>
+          )}
           <Button onClick={handleAuthClick} disabled={isLoading}>
             {isLoading ? 'Connecting...' : clientIdAvailable ? 'Connect Calendar' : 'Use Demo Mode'}
           </Button>
