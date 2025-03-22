@@ -35,6 +35,21 @@ const getClientId = (): string => {
   return '';
 };
 
+// Get authorized origin for OAuth
+const getAuthOrigin = (): string => {
+  // Check localStorage first (highest priority, set via UI)
+  const localStorageOrigin = localStorage.getItem('googleAuthOrigin');
+  if (localStorageOrigin) {
+    console.log('Using Auth Origin from localStorage:', localStorageOrigin);
+    return localStorageOrigin;
+  }
+  
+  // Fall back to current origin
+  const currentOrigin = window.location.origin;
+  console.log('Using current origin for Auth:', currentOrigin);
+  return currentOrigin;
+};
+
 // Add debugging to help troubleshoot
 const CLIENT_ID = getClientId();
 console.log('Google Client ID available:', CLIENT_ID ? 'Yes' : 'No');
@@ -90,6 +105,10 @@ export const requestGoogleCalendarAccess = async (): Promise<CalendarUser> => {
       console.log('No Google Client ID found, falling back to demo mode');
       throw new Error('Google Client ID is not configured. Please go to Settings > API Configuration to add your Google API Client ID.');
     }
+    
+    // Log origin for debugging
+    const authOrigin = getAuthOrigin();
+    console.log('Using authorized origin:', authOrigin);
     
     console.log('Requesting Google Calendar access');
     

@@ -7,10 +7,15 @@ import { CalendarUser } from '@/hooks/useCalendarEvents';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSearchParams } from 'react-router-dom';
 
 const UserSettings = () => {
   const [users, setUsers] = useState<CalendarUser[]>([]);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  
+  // Get the tab from URL or default to "accounts"
+  const defaultTab = searchParams.get('tab') || 'accounts';
 
   // Load users from localStorage on mount
   useEffect(() => {
@@ -47,10 +52,12 @@ const UserSettings = () => {
     }
   };
 
-  const handleSaveApiKey = (clientId: string) => {
-    // This will update the client ID in localStorage
-    // The GoogleAuth component will use this value when connecting
+  const handleSaveApiKey = (clientId: string, origin?: string) => {
+    // This will update the client ID and origin in localStorage
     console.log('API key updated:', clientId ? 'Yes (value hidden)' : 'No value provided');
+    if (origin) {
+      console.log('Auth origin updated:', origin);
+    }
     
     // Force refresh to ensure components pick up the new API key
     window.location.reload();
@@ -66,7 +73,7 @@ const UserSettings = () => {
       </div>
 
       <div className="space-y-8">
-        <Tabs defaultValue="accounts" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="accounts">Calendar Accounts</TabsTrigger>
             <TabsTrigger value="api">API Configuration</TabsTrigger>
